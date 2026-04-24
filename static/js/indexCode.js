@@ -202,7 +202,8 @@ const handleSelectNavigation = (event, selectId) => {
 // keyboard shortcuts handler
 const keyboardShortcutsHandler = (event) => {
   // allow system keys (F1-F12, Ctrl+*, etc.)
-  if (event.key.startsWith('F') || event.ctrlKey || event.metaKey || event.altKey) {
+  const key = event && event.key;
+  if ((typeof key === 'string' && key.startsWith('F')) || event.ctrlKey || event.metaKey || event.altKey) {
     return;
   }
 
@@ -213,7 +214,8 @@ const keyboardShortcutsHandler = (event) => {
   }
 
   // check if we should skip (e.g., if user is typing in an input field)
-  if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+  const tgt = event && event.target;
+  if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA')) {
     return;
   }
 
@@ -480,28 +482,40 @@ function updateBannerAndStyling() {
   gameHeader = document.getElementsByClassName("game_header")[0];
 
   if (header) {
-    header.src = selectedTheme.banner;
-    header.width = 1000;
+    if (header.src !== selectedTheme.banner) {
+      header.src = selectedTheme.banner;
+    }
+    if (header.width !== 1000) {
+      header.width = 1000;
+    }
   }
 
-  document.body.background = selectedTheme.background;
+  if (document.body.background !== selectedTheme.background) {
+    document.body.background = selectedTheme.background;
+  }
 
   if (gameWindow) {
-    gameWindow.style.backgroundColor = selectedTheme.coloring_window;
-    if (selectedTheme.text_col != null) {
+    if (gameWindow.style.backgroundColor !== selectedTheme.coloring_window) {
+      gameWindow.style.backgroundColor = selectedTheme.coloring_window;
+    }
+    if (selectedTheme.text_col != null && gameWindow.style.color !== "black") {
       gameWindow.style.color = "black";
     }
   }
 
   if (container) {
-    container.style.backgroundColor = selectedTheme.coloring_container;
-    if (selectedTheme.text_col != null) {
+    if (container.style.backgroundColor !== selectedTheme.coloring_container) {
+      container.style.backgroundColor = selectedTheme.coloring_container;
+    }
+    if (selectedTheme.text_col != null && container.style.color !== selectedTheme.text_col) {
       container.style.color = selectedTheme.text_col;
     }
   }
 
   if (gameHeader) {
-    gameHeader.style.backgroundColor = selectedTheme.coloring_title;
+    if (gameHeader.style.backgroundColor !== selectedTheme.coloring_title) {
+      gameHeader.style.backgroundColor = selectedTheme.coloring_title;
+    }
   }
 
   // classes for theme styling
@@ -518,24 +532,32 @@ function updateStyling() {
   container = document.querySelector(".container");
   gameHeader = document.getElementsByClassName("game_header")[0];
 
-  document.body.background = selectedTheme.background;
+  if (document.body.background !== selectedTheme.background) {
+    document.body.background = selectedTheme.background;
+  }
 
   if (gameWindow) {
-    gameWindow.style.backgroundColor = selectedTheme.coloring_window;
-    if (selectedTheme.text_col != null) {
+    if (gameWindow.style.backgroundColor !== selectedTheme.coloring_window) {
+      gameWindow.style.backgroundColor = selectedTheme.coloring_window;
+    }
+    if (selectedTheme.text_col != null && gameWindow.style.color !== "black") {
       gameWindow.style.color = "black";
     }
   }
 
   if (container) {
-    container.style.backgroundColor = selectedTheme.coloring_container;
-    if (selectedTheme.text_col != null) {
+    if (container.style.backgroundColor !== selectedTheme.coloring_container) {
+      container.style.backgroundColor = selectedTheme.coloring_container;
+    }
+    if (selectedTheme.text_col != null && container.style.color !== selectedTheme.text_col) {
       container.style.color = selectedTheme.text_col;
     }
   }
 
   if (gameHeader) {
-    gameHeader.style.backgroundColor = selectedTheme.coloring_title;
+    if (gameHeader.style.backgroundColor !== selectedTheme.coloring_title) {
+      gameHeader.style.backgroundColor = selectedTheme.coloring_title;
+    }
   }
 
   // classes for theme styling
@@ -550,15 +572,21 @@ function updateStyling() {
 function updateInnerWindowsStyling() {
   ["inner_window_2", "inner_window_3", "inner_window_4", "inner_window_5"].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.style.backgroundColor = selectedTheme.coloring_window;
+    if (el && el.style.backgroundColor !== selectedTheme.coloring_window) {
+      el.style.backgroundColor = selectedTheme.coloring_window;
+    }
   });
 }
 
 function updateGameHeaderContentAndStyling() {
   const gameHeader = $(".game_header")[0];
-  if (gameHeader.innerHTML != corrr) gameHeader.innerHTML = corrr;
-  gameHeader.style.backgroundColor = selectedTheme.coloring_title;
-  updateInnerWindowsStyling();
+  if (gameHeader) {
+    if (gameHeader.innerHTML != corrr) gameHeader.innerHTML = corrr;
+    if (gameHeader.style.backgroundColor !== selectedTheme.coloring_title) {
+      gameHeader.style.backgroundColor = selectedTheme.coloring_title;
+    }
+    updateInnerWindowsStyling();
+  }
 }
 
 function updateDynamicStyle() {
@@ -590,9 +618,22 @@ function updateDynamicStyle() {
 let themeUpdateObserver = null;
 let headerObserver = null;
 let documentObserver = null;
+let currentObservedHeader = null;
+
+let themeUpdateScheduled = false;
 
 // this handles theme updates
 function handleThemeUpdates() {
+  if (themeUpdateScheduled) return;
+  themeUpdateScheduled = true;
+
+  requestAnimationFrame(() => {
+    themeUpdateScheduled = false;
+    actuallyHandleThemeUpdates();
+  });
+}
+
+function actuallyHandleThemeUpdates() {
   // skip updates while theme menu is open
   if (nct_stuff.pauseThemeUpdates) return;
 
@@ -603,7 +644,9 @@ function handleThemeUpdates() {
   ) {
     nct_stuff.themes[nct_stuff.selectedTheme] = strCopy(nct_stuff.custom_override);
     selectedTheme = nct_stuff.themes[nct_stuff.selectedTheme];
-    gameWindow.style.backgroundImage = "";
+    if (gameWindow && gameWindow.style.backgroundImage !== "") {
+      gameWindow.style.backgroundImage = "";
+    }
     updateStyling();
   } else {
     // ensure selectedTheme is synced with nct_stuff.selectedTheme
@@ -627,7 +670,9 @@ function handleThemeUpdates() {
     if (gameHeader.innerHTML != corrr) {
       gameHeader.innerHTML = corrr;
     }
-    gameHeader.style.backgroundColor = selectedTheme.coloring_title;
+    if (gameHeader.style.backgroundColor !== selectedTheme.coloring_title) {
+      gameHeader.style.backgroundColor = selectedTheme.coloring_title;
+    }
     corrr = gameHeader.innerHTML;
   }
 
@@ -639,12 +684,23 @@ function observeGameHeader() {
   const gameHeader = document.getElementsByClassName("game_header")[0];
 
   if (!gameHeader) {
+    currentObservedHeader = null;
+    if (headerObserver) {
+      headerObserver.disconnect();
+      headerObserver = null;
+    }
+    return;
+  }
+
+  if (gameHeader === currentObservedHeader && headerObserver) {
     return;
   }
 
   if (headerObserver) {
     headerObserver.disconnect();
   }
+
+  currentObservedHeader = gameHeader;
 
   headerObserver = new MutationObserver((mutations) => {
     let shouldUpdate = false;
@@ -678,13 +734,9 @@ function observeGameHeader() {
 
 // watch for game_header being added/removed
 documentObserver = new MutationObserver((mutations) => {
-  for (const mutation of mutations) {
-    if (mutation.type === 'childList') {
-      const gameHeaders = document.getElementsByClassName("game_header");
-      if (gameHeaders.length > 0) {
-        observeGameHeader();
-      }
-    }
+  const gameHeader = document.getElementsByClassName("game_header")[0];
+  if (gameHeader !== currentObservedHeader) {
+    observeGameHeader();
   }
 });
 
